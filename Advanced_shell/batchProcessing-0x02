@@ -2,7 +2,7 @@
 # This script fetches data for a list of Pokémon with retry logic.
 
 # List of Pokémon to fetch as specified in the task.
-POKEMON_LIST=("Bulbasaur" "Ivysaur" "Venusaur" "Charmander" "Charmeleon")
+POKEMON_LIST=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 
 # Directory to save the JSON files.
 OUTPUT_DIR="pokemon_data"
@@ -16,14 +16,10 @@ RETRY_DELAY=1 # seconds between retries
 
 # Loop through each Pokémon in the list.
 for pokemon_name in "${POKEMON_LIST[@]}"; do
-    # API expects lowercase names, so we convert the name.
-    # This also standardizes our filenames.
-    pokemon_name_lower=$(echo "$pokemon_name" | tr '[:upper:]' '[:lower:]')
+    echo "Fetching data for $pokemon_name..."
     
-    echo "Fetching data for $pokemon_name_lower..."
-    
-    API_URL="$BASE_URL$pokemon_name_lower"
-    OUTPUT_FILE="$OUTPUT_DIR/${pokemon_name_lower}.json"
+    API_URL="$BASE_URL$pokemon_name"
+    OUTPUT_FILE="$OUTPUT_DIR/${pokemon_name}.json"
     
     success=false
     # Loop for retry mechanism
@@ -43,7 +39,7 @@ for pokemon_name in "${POKEMON_LIST[@]}"; do
     
     # If all retries failed, log an error and clean up.
     if [ "$success" = false ]; then
-        echo "Failed to fetch data for $pokemon_name_lower after $MAX_RETRIES attempts. Skipping. ❌" >&2
+        echo "Failed to fetch data for $pokemon_name after $MAX_RETRIES attempts. Skipping. ❌" >&2
         rm -f "$OUTPUT_FILE" # Remove the empty file
     fi
     
