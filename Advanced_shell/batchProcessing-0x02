@@ -1,0 +1,52 @@
+#!/bin/bash
+# This script fetches data for a list of Pokémon with retry logic.
+
+# List of Pokémon to fetch as specified in the task.
+POKEMON_LIST=("Bulbasaur" "Ivysaur" "Venusaur" "Charmander" "Charmeleon")
+
+# Directory to save the JSON files.
+OUTPUT_DIR="pokemon_data"
+# Create the directory if it doesn't exist. -p flag prevents errors if it already exists.
+mkdir -p "$OUTPUT_DIR"
+
+# Base URL for the Pokémon API.
+BASE_URL="https://pokeapi.co/api/v2/pokemon/"
+MAX_RETRIES=3
+RETRY_DELAY=1 # seconds between retries
+
+# Loop through each Pokémon in the list.
+for pokemon_name in "${POKEMON_LIST[@]}"; do
+    # API expects lowercase names, so we convert the name.
+    # This also standardizes our filenames.
+    pokemon_name_lower=$(echo "$pokemon_name" | tr '[:upper:]' '[:lower:]')
+    
+    echo "Fetching data for $pokemon_name_lower..."
+    
+    API_URL="$BASE_URL$pokemon_name_lower"
+    OUTPUT_FILE="$OUTPUT_DIR/${pokemon_name_lower}.json"
+    
+    success=false
+    # Loop for retry mechanism
+    for attempt in $(seq 1 $MAX_RETRIES); do
+        # Use curl to fetch the data.
+        if curl -s -f "$API_URL" -o "$OUTPUT_FILE"; then
+            echo "Saved data to $OUTPUT_FILE ✅"
+            success=true
+            break # Exit the retry loop on success
+        fi
+        
+        # If not the last attempt, wait before retrying.
+        if [ "$attempt" -lt "$MAX_RETRIES" ]; then
+            sleep $RETRY_DELAY
+        fi
+    done
+    
+    # If all retries failed, log an error and clean up.
+    if [ "$success" = false ]; then
+        echo "Failed to fetch data for $pokemon_name_lower after $MAX_RETRIES attempts. Skipping. ❌" >&2
+        rm -f "$OUTPUT_FILE" # Remove the empty file
+    fi
+    
+    # A delay between requests for different Pokémon.
+    sleep 1
+done 

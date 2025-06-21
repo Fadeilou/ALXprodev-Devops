@@ -1,0 +1,33 @@
+#!/bin/bash
+# This script extracts Pokémon data from the data.json file,
+# formats it, and prints a human-readable summary.
+
+DATA_FILE="data.json"
+
+# Check if the data file exists and is not empty.
+if [ ! -s "$DATA_FILE" ]; then
+    echo "Error: $DATA_FILE not found or is empty. Please run the apiAutomation-0x00 script first." >&2
+    exit 1
+fi
+
+# Use jq to extract the necessary fields: name, type, weight, and height.
+# The output is tab-separated for easy parsing with awk.
+# -r flag outputs raw strings without quotes.
+jq -r '[.name, .types[0].type.name, .weight, .height] | @tsv' "$DATA_FILE" | \
+# Pipe the jq output to awk for formatting.
+# -F'\t' sets the field separator to a tab.
+awk -F'\t' '{
+    # Capitalize the first letter of the Pokémon's name.
+    name = toupper(substr($1, 1, 1)) substr($1, 2)
+    
+    # Capitalize the first letter of the Pokémon's type.
+    type = toupper(substr($2, 1, 1)) substr($2, 2)
+    
+    # The API provides weight in hectograms and height in decimetres.
+    # We convert them to kilograms and meters respectively.
+    weight = $3 / 10
+    height = $4 / 10
+    
+    # Print the final formatted string.
+    printf "%s is of type %s, weighs %skg, and is %sm tall.\\n", name, type, weight, height
+}' 
