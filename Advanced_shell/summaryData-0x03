@@ -19,12 +19,10 @@ echo "Name,Height (m),Weight (kg)" > "$REPORT_FILE"
 for file in "$DATA_DIR"/*.json; do
   # Ensure we are only processing files.
   if [ -f "$file" ]; then
-    # Use jq to extract name, height, and weight.
-    # -r outputs raw strings.
-    # We capitalize the first letter of the name.
-    # Height and weight are converted from API units to m and kg.
-    # The result is formatted as a CSV row and appended to the report file.
-    jq -r '[.name | sub("^[a-z]"; .[0:1] | ascii_upcase), .height/10, .weight/10] | @csv' "$file" >> "$REPORT_FILE"
+    # Use jq to extract data, sed to capitalize, and awk to format as CSV.
+    jq -r '[.name, .height, .weight] | @tsv' "$file" | \
+    sed -e 's/^\([a-z]\)/\u\1/' | \
+    awk -F'\t' '{printf "%s,%.1f,%.1f\n", $1, $2/10, $3/10}' >> "$REPORT_FILE"
   fi
 done
 
